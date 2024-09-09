@@ -17,7 +17,12 @@ unsigned long knuth_mmix_one_round(unsigned long in)
 
 void *mark_memarea_and_get_user_ptr(void *ptr, unsigned long size, MemKind k)
 {
-    /* ecrire votre code ici */
+    unsigned long magic = knuth_mmix_one_round((unsigned long) ptr);
+    magic = (magic & ˜(0b11UL) ) | (0b11 & k);
+    char * ptr_char = (char *) ptr;
+    ptr_char[0] = size;
+    ptr_char[7] = magic;
+
     return (void *)0;
 }
 
