@@ -26,7 +26,6 @@ void *mark_memarea_and_get_user_ptr(void *ptr, unsigned long size, MemKind k)
     unsigned long * ptr_ulong = (unsigned long *) ptr;
     ptr_ulong[0] = size;
     ptr_ulong[1] = magic;
-    ptr_ulong[2] = magic;
     ptr_ulong[size/8 - 1] = size;
     ptr_ulong[size/8 - 2] = magic;
 
@@ -37,7 +36,12 @@ Alloc
 mark_check_and_get_alloc(void *ptr)
 {
     /* ecrire votre code ici */
-    Alloc a = {};
+    unsigned long * ptr_ulong = (unsigned long *) ptr;
+    MemKind k = ptr_ulong[1] & 0b11;
+    Alloc a = {.size = ptr_ulong[0], .kind = k, .ptr = ptr};
+    assert(a.size == ptr_ulong[a.size/8 - 1]);
+    assert(ptr_ulong[1] == ptr_ulong[a.size/8 - 2]);
+
     return a;
 }
 
