@@ -17,7 +17,7 @@ unsigned long knuth_mmix_one_round(unsigned long in)
 
 void *mark_memarea_and_get_user_ptr(void *ptr, unsigned long size, MemKind k)
 {   
-    if(size < 8 || ptr == NULL){
+    if(size < 32 || ptr == NULL){
         return NULL;
     }
     unsigned long magic = knuth_mmix_one_round((unsigned long) ptr);
