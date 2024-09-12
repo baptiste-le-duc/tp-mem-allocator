@@ -16,14 +16,21 @@ unsigned long knuth_mmix_one_round(unsigned long in)
 }
 
 void *mark_memarea_and_get_user_ptr(void *ptr, unsigned long size, MemKind k)
-{
+{   
+    if(size < 8 || ptr == NULL){
+        return NULL;
+    }
     unsigned long magic = knuth_mmix_one_round((unsigned long) ptr);
-    magic = (magic & ˜(0b11UL) ) | (0b11 & k);
-    char * ptr_char = (char *) ptr;
-    ptr_char[0] = size;
-    ptr_char[7] = magic;
+    magic = (magic & ~(0b11UL)) | k;
 
-    return (void *)0;
+    unsigned long * ptr_ulong = (unsigned long *) ptr;
+    ptr_ulong[0] = size;
+    ptr_ulong[1] = magic;
+    ptr_ulong[2] = magic;
+    ptr_ulong[size/8 - 1] = size;
+    ptr_ulong[size/8 - 2] = magic;
+
+    return (void *)(ptr_ulong + 2);
 }
 
 Alloc
