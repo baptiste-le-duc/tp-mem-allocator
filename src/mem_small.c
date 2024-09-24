@@ -12,9 +12,6 @@
 void *
 emalloc_small(unsigned long size)
 {
-    /* ecrire votre code ici */
-
-
     if (arena.chunkpool == NULL){
         int size = mem_realloc_small();
         void ** cell = arena.chunkpool;
@@ -32,5 +29,8 @@ emalloc_small(unsigned long size)
 }
 
 void efree_small(Alloc a) {
-
+    void * old_head_addr = arena.chunkpool;
+    arena.chunkpool = a.ptr;
+    void ** cell = arena.chunkpool;
+    *cell = old_head_addr;
 }
