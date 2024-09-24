@@ -5,6 +5,7 @@
  ******************************************************/
 
 #include <assert.h>
+#include <stdint.h>
 #include "mem.h"
 #include "mem_internals.h"
 
@@ -12,25 +13,24 @@ void *
 emalloc_small(unsigned long size)
 {
     /* ecrire votre code ici */
-    void* head = arena.chunkpool;
 
-    if (head == NULL){
-        unsigned long size = mem_realloc_small();
-        int nb_chunks = size / 8; 
-        int counter = 0;
-        void ** current = arena.chunkpool;
-        while (counter <= nb_chunks){
-            *current = &current + CHUNKSIZE;
-            current += CHUNKSIZE;
+
+    if (arena.chunkpool == NULL){
+        int size = mem_realloc_small();
+        void ** cell = arena.chunkpool;
+        for(int i = CHUNKSIZE; i<size; i+= CHUNKSIZE){
+            void * next_chunk_addr = (void*) ((char *)arena.chunkpool + i);
+            *cell = next_chunk_addr;
+            cell = next_chunk_addr;
         }
     }
-    else{
-       arena.chunkpool += 12; 
-    }
-    
-    return mark_memarea_and_get_user_ptr(head, CHUNKSIZE, SMALL_KIND);
+    void ** head = arena.chunkpool;
+    void * next_addr = *head;
+    void* user_ptr = mark_memarea_and_get_user_ptr(arena.chunkpool, CHUNKSIZE, SMALL_KIND);
+    arena.chunkpool = next_addr; 
+    return user_ptr;
 }
 
 void efree_small(Alloc a) {
-    /* ecrire votre code ici */
+
 }
