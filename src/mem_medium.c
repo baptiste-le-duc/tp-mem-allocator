@@ -21,13 +21,43 @@ unsigned int puiss2(unsigned long size) {
     return p;
 }
 
+void split(int n){
+    if (n == FIRST_ALLOC_MEDIUM_EXPOSANT + arena.medium_next_exponant){
+        mem_realloc_medium(n);
+    }
 
-void *
-emalloc_medium(unsigned long size)
+    if (arena.TZL[n] != NULL){
+        int child_block_size = n / 2;
+        void * head = arena.TZL[n];
+        void * buddy = (void *)(((intptr_t) head) ^ child_block_size) ; // Get buddy address
+        arena.TZL[n-1] = head; //Replace block in n-1 list
+        *((void **) head) = buddy; // ie next_addr de head = buddy
+        *(void **)buddy = NULL;
+    }
+    else {
+        split(n+1);
+    }
+}
+
+
+void * emalloc_medium(unsigned long size)
 {
     assert(size < LARGEALLOC);
     assert(size > SMALLALLOC);
-    /* ecrire votre code ici */
+
+    int idx = puiss2(size);
+
+    if (arena.TZL[idx]){ // Block found
+        void * head = arena.TZL[idx]; // Pointeur vers le premier élément de la liste 
+        void * next_addr = *((void**)head);
+        
+        void* user_ptr = mark_memarea_and_get_user_ptr(head, CHUNKSIZE, MEDIUM_KIND);
+        arena.TZL[idx] = next_addr;
+        return user_ptr;
+    }
+
+    split(idx + 1);
+    
     return (void *) 0;
 }
 
