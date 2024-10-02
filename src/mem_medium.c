@@ -61,7 +61,25 @@ void * emalloc_medium(unsigned long size)
 
 
 void efree_medium(Alloc a) {
-    /* ecrire votre code ici */
+    int idx = puiss2(a.size);
+    void * buddy = (void *)((intptr_t)a.ptr ^ (a.size));
+    if (arena.TZL[idx]){
+        void * current = arena.TZL[idx];
+        void * next = *((void **) current);
+        while (next){ //Search buddy in linked list
+            if (next == buddy){//Buddy found
+                *((void**) current) = *((void**) next);
+                arena.TZL[idx + 1] = a.ptr; // Replace block
+                Alloc new_a = {.ptr = a.ptr, .size = (1 <<(idx + 1)), .kind = MEDIUM_KIND};
+                efree_medium(new_a);
+            }
+        }
+
+    }
+    else{ // Insertion of the block to the corresponding linked list
+        *((void**)a.ptr) = arena.TZL[idx];
+        arena.TZL[idx] = a.ptr;
+    }
 }
 
 
