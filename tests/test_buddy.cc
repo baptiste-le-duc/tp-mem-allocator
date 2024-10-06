@@ -12,7 +12,6 @@
 
 TEST(Medium,buddy) {
   constexpr unsigned long ALLOC_MEM_SIZE = FIRST_ALLOC_MEDIUM/2;
-
   void *mref = emalloc(ALLOC_MEM_SIZE); // first allocation
   ASSERT_NE( mref, (void*) 0);
   memset(mref, 1, ALLOC_MEM_SIZE);
@@ -26,8 +25,10 @@ TEST(Medium,buddy) {
   ASSERT_EQ( nb_TZL_entries(), 0U);
   efree(mref2);
   ASSERT_EQ( nb_TZL_entries(), 1U);
+  
 
   // Next two allocations should be buddys of 128 Bytes
+  printf("START TEST\n entries : %d", nb_TZL_entries());
   void *m1 = emalloc(65);
   ASSERT_NE( m1, (void *)0 );
   memset( m1, 1, 65);
@@ -40,10 +41,11 @@ TEST(Medium,buddy) {
   unsigned long v1 = (unsigned long)m1;
   unsigned long v2 = (unsigned long)m2;
   ASSERT_EQ( (v1-vref)^(v2-vref), 128UL );
-
+  printf("entries before frees : %d\n", nb_TZL_entries());
   efree(m1);
   efree(m2);
   ASSERT_EQ( nb_TZL_entries(), 1U);
+  printf("entries before frees : %d\n", nb_TZL_entries());
 
   // after fusion, the merge allow to get back the same full block
   void *mref3 = emalloc(ALLOC_MEM_SIZE);

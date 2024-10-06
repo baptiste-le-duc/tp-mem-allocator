@@ -65,27 +65,49 @@ void * emalloc_medium(unsigned long size)
     return user_ptr;
 }
 
+void * min(void * a, void * b) {
+    return (a < b) ? a : b;
+}
+void merge_blocks(void * ptr_block, int idx){
+    Alloc new_a = {.ptr = ptr_block, .size = (1 <<(idx + 1)), .kind = MEDIUM_KIND};
+    *((void**) new_a.ptr) = arena.TZL[idx + 1];
+    arena.TZL[idx + 1] = new_a.ptr;
+
+    efree_medium(new_a);
+}
 
 void efree_medium(Alloc a) {
     int idx = puiss2(a.size);
-    void * buddy = (void *)((intptr_t)a.ptr ^ (a.size));
-    if (arena.TZL[idx]){
+    void * buddy = (void *)((intptr_t)a.ptr ^ (1 << idx));
+    if (arena.TZL[idx] != NULL){
+        void * prev = NULL;
         void * current = arena.TZL[idx];
-        void * next = *((void **) current);
-        while (next){ //Search buddy in linked list
-            if (next == buddy){//Buddy found
-                *((void**) current) = *((void**) next);
-                arena.TZL[idx + 1] = a.ptr; // Replace block
-                Alloc new_a = {.ptr = a.ptr, .size = (1 <<(idx + 1)), .kind = MEDIUM_KIND};
-                efree_medium(new_a);
-            }\
-        }
 
+        if (current == buddy){//buddy found in head of the linked list
+            arena.TZL[idx] = *((void**)current);
+            merge_blocks(min(a.ptr, buddy), idx);
+            return;
+        } 
+
+        while (current != NULL){ //Search buddy in linked list
+            prev = current;
+            current = *((void**)current);
+            if (current == buddy){ //buddy found
+                if(prev == arena.TZL[idx]){
+                    arena.TZL[idx] = *((void**)current);
+                }
+                else {
+                *((void **) prev) = *((void**)current);
+                }
+                merge_blocks(min(a.ptr, buddy), idx);
+                return;
+            }
+        }
     }
-    else{ // Insertion of the block to the corresponding linked list
-        *((void**)a.ptr) = arena.TZL[idx];
-        arena.TZL[idx] = a.ptr;
-    }
+    // buddy not found
+    *((void**)a.ptr) = arena.TZL[idx];
+    arena.TZL[idx] = a.ptr;
+
 }
 
 

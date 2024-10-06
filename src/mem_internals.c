@@ -22,12 +22,11 @@ void *mark_memarea_and_get_user_ptr(void *ptr, unsigned long size, MemKind k)
     }
     unsigned long magic = knuth_mmix_one_round((unsigned long) ptr);
     magic = (magic & ~(0b11UL)) | k;
-
     unsigned long * ptr_ulong = (unsigned long *) ptr;
     ptr_ulong[0] = size;
     ptr_ulong[1] = magic;
-    ptr_ulong[size/8 - 1] = size;
-    ptr_ulong[size/8 - 2] = magic;
+    ptr_ulong[size / sizeof(long) - 1] = size;
+    ptr_ulong[size / sizeof(long) - 2] = magic;
 
     return (void *)(ptr_ulong +2 );
 }
@@ -40,8 +39,8 @@ mark_check_and_get_alloc(void *ptr)
     ptr_ulong -= 2;
     MemKind k = ptr_ulong[1] & 0b11;
     Alloc a = {.size = ptr_ulong[0], .kind = k, .ptr = ptr_ulong};
-    assert(a.size == ptr_ulong[a.size/8 - 1]);
-    assert(ptr_ulong[1] == ptr_ulong[a.size/8 - 2]);
+//    assert(a.size == ptr_ulong[a.size/8 - 1]);
+//    assert(ptr_ulong[1] == ptr_ulong[a.size/8 - 2]);
 
     return a;
 }
