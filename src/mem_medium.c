@@ -70,8 +70,8 @@ void * min(void * a, void * b) {
 }
 void merge_blocks(void * ptr_block, int idx){
     Alloc new_a = {.ptr = ptr_block, .size = (1 <<(idx + 1)), .kind = MEDIUM_KIND};
-    *((void**) new_a.ptr) = arena.TZL[idx + 1];
-    arena.TZL[idx + 1] = new_a.ptr;
+    // *((void**) new_a.ptr) = arena.TZL[idx + 1];
+    // arena.TZL[idx + 1] = new_a.ptr;
 
     efree_medium(new_a);
 }
@@ -79,6 +79,13 @@ void merge_blocks(void * ptr_block, int idx){
 void efree_medium(Alloc a) {
     int idx = puiss2(a.size);
     void * buddy = (void *)((intptr_t)a.ptr ^ (1 << idx));
+    
+    if (idx == FIRST_ALLOC_MEDIUM_EXPOSANT + arena.medium_next_exponant){
+        *((void**) a.ptr) = arena.TZL[idx];
+        arena.TZL[idx] = a.ptr;
+        return;
+    }
+    
     if (arena.TZL[idx] != NULL){
         void * prev = NULL;
         void * current = arena.TZL[idx];
