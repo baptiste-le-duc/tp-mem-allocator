@@ -21,88 +21,104 @@ unsigned int puiss2(unsigned long size) {
     return p;
 }
 
-void split(int n){
-    
-    if (n == FIRST_ALLOC_MEDIUM_EXPOSANT + arena.medium_next_exponant){
+// Split a block of size 2^(n+1) into two blocks of size 2^n
+void split(int n) {
+
+    // If at the largest possible block size, allocate more memory
+    if (n == FIRST_ALLOC_MEDIUM_EXPOSANT + arena.medium_next_exponant) {
         mem_realloc_medium();
         return;
-
     }
-    if (arena.TZL[n+1] == NULL){
+
+    // If no free blocks in the larger size, recursively split a larger block
+    if (arena.TZL[n+1] == NULL) {
         split(n+1);
     }
 
+    // Get the first block from the larger size list and remove it
     void * new_head = arena.TZL[n + 1];
-    arena.TZL[n + 1] = *((void**) new_head); //Remove new_head from linked list
-    void *buddy = (void *)((intptr_t)new_head ^ (1 << (n)));
-    assert((char *) buddy - (char*) new_head == (1<< (n)));
-    arena.TZL[n] = new_head; //Insert new head and its buddy to the linked list
-    *((void **) new_head) = buddy; // Next address of new_head = buddy
-    *((void **) buddy) = NULL;
+    arena.TZL[n + 1] = *((void**) new_head);
 
+    // Calculate buddy address
+    void *buddy = (void *)((intptr_t)new_head ^ (1 << (n)));
+    assert((char *) buddy - (char*) new_head == (1 << n));
+
+    // Insert new head and its buddy into the free list for size 2^n
+    arena.TZL[n] = new_head;
+    *((void **) new_head) = buddy;
+    *((void **) buddy) = NULL;
 }
 
-void * emalloc_medium(unsigned long size)
-{
-    assert(size < LARGEALLOC);
-    assert(size > SMALLALLOC);
+// Allocate a medium-sized block
+void * emalloc_medium(unsigned long size) {
+    assert(size < LARGEALLOC && size > SMALLALLOC);
 
-    int idx = puiss2(size + 32);
+    // Get index for the appropriate block size
+    int idx = puiss2(size + MARK_SIZE);
 
-    if (arena.TZL[idx] == NULL){ // Split
+    // If no blocks available, split larger ones
+    if (arena.TZL[idx] == NULL) {
         split(idx);
     }
 
-    assert(arena.TZL[idx] != NULL);
-    void * head = arena.TZL[idx]; // Pointeur vers le premier élément de la liste 
+    // Allocate block from the free list
+    void * head = arena.TZL[idx];
     arena.TZL[idx] = *((void**)head); // Move to next block
-    void* user_ptr = mark_memarea_and_get_user_ptr(head, size + 32, MEDIUM_KIND);
-    return user_ptr;
+    return mark_memarea_and_get_user_ptr(head, (1<<idx), MEDIUM_KIND);
 }
 
+// Return the minimum of two pointers (address-wise)
 void * min(void * a, void * b) {
     return (a < b) ? a : b;
 }
-void merge_blocks(void * ptr_block, int idx){
-    Alloc new_a = {.ptr = ptr_block, .size = (1 <<(idx + 1)), .kind = MEDIUM_KIND};
-    efree_medium(new_a);
+
+// Merge two adjacent blocks back into a larger one
+void merge_blocks(void * ptr_block, int idx) {
+    Alloc new_a = {.ptr = ptr_block, .size = (1 << (idx + 1)), .kind = MEDIUM_KIND};
+    efree_medium(new_a);  // Free the merged block
 }
 
+// Free a medium-sized block, and try to merge it with its buddy
 void efree_medium(Alloc a) {
     int idx = puiss2(a.size);
     void * buddy = (void *)((intptr_t)a.ptr ^ (1 << idx));
-    
-    if (idx == FIRST_ALLOC_MEDIUM_EXPOSANT + arena.medium_next_exponant){
+
+    // If at the maximum block size, add back to the free list
+    if (idx == FIRST_ALLOC_MEDIUM_EXPOSANT + arena.medium_next_exponant) {
         *((void**) a.ptr) = arena.TZL[idx];
         arena.TZL[idx] = a.ptr;
         return;
     }
-    
-    if (arena.TZL[idx] != NULL){
+
+    // Try to find the buddy in the free list to merge
+    if (arena.TZL[idx] != NULL) {
         void * prev = NULL;
         void * current = arena.TZL[idx];
 
-        if (current == buddy){// Buddy found in head of the linked list
+        // If buddy is at the head of the list
+        if (current == buddy) {
             arena.TZL[idx] = *((void**)current);
             merge_blocks(min(a.ptr, buddy), idx);
             return;
-        } 
+        }
 
-        while (current != NULL){ //Search buddy in linked list
+        // Search for buddy in the list
+        while (current != NULL) {
             prev = current;
             current = *((void**)current);
-            if (current == buddy){ //buddy found
-                *((void **) prev) = *((void**)current);
-                merge_blocks(min(a.ptr, buddy), idx);
+            if (current == buddy) {
+                *((void **) prev) = *((void**)current);  // Remove buddy
+                merge_blocks(min(a.ptr, buddy), idx);     // Merge blocks
                 return;
             }
         }
     }
-    // Buddy not found
+
+    // Buddy not found, add the block to the free list
     *((void**)a.ptr) = arena.TZL[idx];
     arena.TZL[idx] = a.ptr;
-
 }
+
 
 
 

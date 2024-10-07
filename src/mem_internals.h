@@ -33,6 +33,7 @@ extern "C" {
 // values from 0 to 3 fit in 2 bit
 typedef enum _MemKind { SMALL_KIND, MEDIUM_KIND, LARGE_KIND } MemKind;
 
+#define MARK_SIZE 4 * sizeof(long)
 #define TZL_SIZE 48
     
 typedef struct _MemArena {
