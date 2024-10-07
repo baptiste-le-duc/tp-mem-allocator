@@ -27,8 +27,8 @@ set(CMAKE_C_STANDARD 17)
 set(CMAKE_CXX_STANDARD 20)
 
 set(CMAKE_BUILD_TYPE Debug)
-set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wall -Werror -g -fanalyzer -fsanitize=undefined -fsanitize-address-use-after-scope")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Werror -g -fsanitize-address-use-after-scope")
+set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wall -Werror -fanalyzer -fsanitize=undefined -fsanitize-address-use-after-scope")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Werror -fsanitize-address-use-after-scope")
 
 # Nom des auteurs comme un identifiant C (monoligne alpha)
 execute_process(COMMAND cat AUTHORS WORKING_DIRECTORY ${CMAKE_SOURCE_DIR} OUTPUT_VARIABLE AUTHOR_LIST)
@@ -59,12 +59,6 @@ add_test(AllTestsAllocator alloctest)
 # Ajout d'une cible pour lancer les tests de manière verbeuse
 ##
 add_custom_target(check alloctest)
-
-# Cible dédiée pour le test spécifique test_buddy
-add_executable(buddytest tests/test_buddy.cc)
-
-# Lier les bibliothèques nécessaires
-target_link_libraries(buddytest gtest gtest_main ensimalloc)
 
 ##
 # Construction du shell
