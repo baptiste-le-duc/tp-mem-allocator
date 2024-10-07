@@ -22,7 +22,7 @@ unsigned int puiss2(unsigned long size) {
 }
 
 void split(int n){
-    printf("split %d\n", n);
+    
     if (n == FIRST_ALLOC_MEDIUM_EXPOSANT + arena.medium_next_exponant){
         mem_realloc_medium();
         return;
@@ -37,12 +37,8 @@ void split(int n){
     void *buddy = (void *)((intptr_t)new_head ^ (1 << (n)));
     assert((char *) buddy - (char*) new_head == (1<< (n)));
     arena.TZL[n] = new_head; //Insert new head and its buddy to the linked list
-    *((void **) new_head) = buddy; // ie next_addr de head = buddy
+    *((void **) new_head) = buddy; // Next address of new_head = buddy
     *((void **) buddy) = NULL;
-
-
-
-
 
 }
 
@@ -56,11 +52,10 @@ void * emalloc_medium(unsigned long size)
     if (arena.TZL[idx] == NULL){ // Split
         split(idx);
     }
-    //block found
-    // printf("arena.tzl[idx] : %p", arena.TZL[idx]);
+
     assert(arena.TZL[idx] != NULL);
     void * head = arena.TZL[idx]; // Pointeur vers le premier élément de la liste 
-    arena.TZL[idx] = *((void**)head); // Avance au prochain block
+    arena.TZL[idx] = *((void**)head); // Move to next block
     void* user_ptr = mark_memarea_and_get_user_ptr(head, size + 32, MEDIUM_KIND);
     return user_ptr;
 }
@@ -70,9 +65,6 @@ void * min(void * a, void * b) {
 }
 void merge_blocks(void * ptr_block, int idx){
     Alloc new_a = {.ptr = ptr_block, .size = (1 <<(idx + 1)), .kind = MEDIUM_KIND};
-    // *((void**) new_a.ptr) = arena.TZL[idx + 1];
-    // arena.TZL[idx + 1] = new_a.ptr;
-
     efree_medium(new_a);
 }
 
@@ -90,7 +82,7 @@ void efree_medium(Alloc a) {
         void * prev = NULL;
         void * current = arena.TZL[idx];
 
-        if (current == buddy){//buddy found in head of the linked list
+        if (current == buddy){// Buddy found in head of the linked list
             arena.TZL[idx] = *((void**)current);
             merge_blocks(min(a.ptr, buddy), idx);
             return;
@@ -100,18 +92,13 @@ void efree_medium(Alloc a) {
             prev = current;
             current = *((void**)current);
             if (current == buddy){ //buddy found
-                if(prev == arena.TZL[idx]){
-                    arena.TZL[idx] = *((void**)current);
-                }
-                else {
                 *((void **) prev) = *((void**)current);
-                }
                 merge_blocks(min(a.ptr, buddy), idx);
                 return;
             }
         }
     }
-    // buddy not found
+    // Buddy not found
     *((void**)a.ptr) = arena.TZL[idx];
     arena.TZL[idx] = a.ptr;
 
