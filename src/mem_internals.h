@@ -27,8 +27,7 @@ extern "C" {
 #define LARGEALLOC (1<<17) 
 
 // Define the maximum number of arenas based on the assumption of up to 64 cores.
-// Squaring the core count (64 * 64 = 4096) allows sufficient allocation pools
-// for multi-threaded applications to reduce contention.
+// Squaring the core count (64 * 64 = 4096)
 #define MAX_ARENAS (1 << 12)  // 4096 arenas
 
 // 2**13o == 16Kio

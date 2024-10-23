@@ -36,6 +36,8 @@ void split(int n) {
         split(n+1);
     }
 
+    assert(arena->TZL[n+1] != NULL);
+    
     // Get the first block from the larger size list and remove it
     void * new_head = arena->TZL[n + 1];
     arena->TZL[n + 1] = *((void**) new_head);
@@ -66,6 +68,7 @@ void * emalloc_medium(unsigned long size) {
     }
 
     // Allocate block from the free list
+    assert(arena->TZL[idx] != NULL);
     void * head = arena->TZL[idx];
     arena->TZL[idx] = *((void**)head); // Move to next block
     pthread_mutex_unlock(&arena->lock);
