@@ -13,7 +13,9 @@
 
 /** squelette du TP allocateur memoire */
 
-MemArena arena = {};
+Arenas arenas= {};
+int is_init = 0;
+
 
 
 /* ecrire votre code ici */
@@ -21,7 +23,11 @@ MemArena arena = {};
 
 void *
 emalloc(unsigned long size)
-{
+{   
+    if (is_init == 0){
+        init_arenas();
+        is_init = 1;
+    }
     /*  ecrire votre code ici */
     if (size == 0)
 	return NULL;

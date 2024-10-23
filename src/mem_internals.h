@@ -13,6 +13,7 @@ extern "C" {
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <pthread.h>
 
 #define handle_fatalError(msg)						\
     do { char c[1048] = {}; snprintf(c, 1048, "%s %s %d",msg,           \
@@ -24,6 +25,11 @@ extern "C" {
 #define CHUNKSIZE 96
 // 128 Kio == 128 * 1024 == 2**17 == (1<<17)
 #define LARGEALLOC (1<<17) 
+
+// Define the maximum number of arenas based on the assumption of up to 64 cores.
+// Squaring the core count (64 * 64 = 4096) allows sufficient allocation pools
+// for multi-threaded applications to reduce contention.
+#define MAX_ARENAS (1 << 12)  // 4096 arenas
 
 // 2**13o == 16Kio
 #define FIRST_ALLOC_SMALL (CHUNKSIZE <<7) // 96o * 128
@@ -41,7 +47,15 @@ typedef struct _MemArena {
     void *TZL[TZL_SIZE];
     int small_next_exponant;
     int medium_next_exponant;
+    pthread_mutex_t lock;  
 } MemArena;
+
+typedef struct _Arenas{
+    MemArena arena_pool[MAX_ARENAS];
+    int nb_arenas;
+
+} Arenas;
+
 
 typedef struct _Alloc {
     void *ptr;
@@ -49,7 +63,12 @@ typedef struct _Alloc {
     unsigned long size;
 } Alloc;
 
-extern MemArena arena;
+extern Arenas arenas;
+
+extern int is_init;
+void init_arenas();
+MemArena * get_arena();
+
 
 unsigned long knuth_mmix_one_round(unsigned long in);
 void *mark_memarea_and_get_user_ptr(void *ptr, unsigned long size, MemKind k);
